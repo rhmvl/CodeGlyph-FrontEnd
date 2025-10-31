@@ -1,0 +1,148 @@
+{
+  "project": {
+    "id": "codeglyph",
+    "name": "CodeGlyph",
+    "language": ["python", "typescript"],
+    "version": "1.0.0",
+    "createdAt": "2025-10-31T10:00:00Z",
+    "lastScanned": "2025-10-31T10:30:00Z",
+    "sourcePath": "/path/to/project",
+    "metrics": {
+      "totalFiles": 5,
+      "totalLOC": 1420,
+      "averageComplexity": 4.6,
+      "averageDepth": 3.2,
+      "dependencies": 12,
+      "functions": 18,
+      "classes": 5
+    },
+    "config": {
+      "visualDefaults": {
+        "colorScale": "complexity",
+        "sizeScale": "loc",
+        "layout": "force-directed",
+        "theme": "dark"
+      },
+      "analysisSettings": {
+        "complexityThreshold": 7,
+        "ignorePatterns": ["*/tests/*", "*/venv/*"],
+        "includeDocstrings": false
+      }
+    }
+  },
+
+  "nodes": [
+    {
+      "id": "core/parser.py",
+      "name": "parser.py",
+      "type": "module",
+      "parent": "project",
+      "path": "core/parser.py",
+      "metrics": {
+        "loc": 310,
+        "complexity": 5.2,
+        "imports": 2,
+        "classes": 1,
+        "functions": 1,
+        "lastModified": "2025-10-30T12:00:00Z"
+      },
+      "tags": ["core", "analysis"],
+      "status": "active",
+      "emotion": {
+        "tension": 0.42,
+        "stability": 0.87,
+        "harmony": 0.65
+      },
+      "style": {
+        "color": "#39A0ED",
+        "highlightColor": "#74c3ff",
+        "size": 1.2
+      }
+    },
+    {
+      "id": "Parser",
+      "name": "Parser",
+      "type": "class",
+      "parent": "core/parser.py",
+      "metrics": {
+        "loc": 180,
+        "complexity": 5.8,
+        "methods": 6
+      },
+      "emotion": {
+        "tension": 0.58,
+        "harmony": 0.70
+      }
+    },
+    {
+      "id": "Parser.analyze_file",
+      "name": "analyze_file",
+      "type": "method",
+      "parent": "Parser",
+      "metrics": {
+        "loc": 60,
+        "complexity": 7,
+        "calls": 1
+      },
+      "calls": ["utils.ast_tools.walk_tree"]
+    },
+    {
+      "id": "viz/graph_builder.py",
+      "name": "graph_builder.py",
+      "type": "module",
+      "parent": "project",
+      "metrics": {
+        "loc": 420,
+        "complexity": 5.5,
+        "imports": 2
+      },
+      "emotion": {
+        "tension": 0.61,
+        "harmony": 0.50
+      },
+      "style": {
+        "color": "#FF6B6B",
+        "size": 1.8
+      }
+    },
+    {
+      "id": "build_graph",
+      "name": "build_graph",
+      "type": "function",
+      "parent": "viz/graph_builder.py",
+      "metrics": {
+        "loc": 100,
+        "complexity": 8,
+        "calls": 1
+      },
+      "calls": ["viz.shaders.apply_colors"],
+      "emotion": {
+        "tension": 0.9,
+        "harmony": 0.3
+      }
+    }
+  ],
+
+  "links": [
+    { "source": "project", "target": "core/parser.py", "relation": "contains" },
+    { "source": "project", "target": "viz/graph_builder.py", "relation": "contains" },
+    { "source": "core/parser.py", "target": "Parser", "relation": "contains" },
+    { "source": "Parser", "target": "Parser.analyze_file", "relation": "contains" },
+    { "source": "viz/graph_builder.py", "target": "build_graph", "relation": "contains" },
+
+    { "source": "core/parser.py", "target": "utils/ast_tools.py", "relation": "imports" },
+    { "source": "viz/graph_builder.py", "target": "viz/shaders.py", "relation": "imports" },
+    { "source": "Parser.analyze_file", "target": "walk_tree", "relation": "calls" },
+    { "source": "build_graph", "target": "apply_colors", "relation": "calls" }
+  ],
+
+  "metadata": {
+    "generator": "CodeGlyph Analyzer v0.1",
+    "schemaVersion": "1.0",
+    "exportedAt": "2025-10-31T10:31:00Z",
+    "engine": {
+      "languageSupport": ["python", "javascript", "typescript"],
+      "analysisTimeMs": 523
+    }
+  }
+}
