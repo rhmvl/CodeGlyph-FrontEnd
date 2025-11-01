@@ -30,21 +30,6 @@ export const Themes = {
     textPrimary: '#1e293b',
     textSecondary: '#475569',
   } satisfies ThemeColors,
-
-  vibrant: {
-    background: '#0f172a',
-    node: '#e11d48',
-    nodeBorder: '#1e293b',
-    aura: '#fb7185',
-    edge: '#38bdf8',
-    importEdge: '#a78bfa',
-    containsEdge: '#34d399',
-    callEdge: '#fbbf24',
-    glowSoft: '#fb7185',
-    glowStrong: '#f43f5e',
-    textPrimary: '#f8fafc',
-    textSecondary: '#94a3b8',
-  } satisfies ThemeColors,
 };
 
 export type ThemeName = keyof typeof Themes;

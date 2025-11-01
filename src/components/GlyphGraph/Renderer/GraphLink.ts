@@ -1,13 +1,8 @@
-import type { GraphLink as LinkData, ThemeColors, MotionSettings } from '../../../utils/types';
-import type { GraphNode } from './GraphNode';
-
-export interface GraphLinkProps {
-  data: LinkData;
-  source: GraphNode;
-  target: GraphNode;
-  themeColors: ThemeColors;
-  motionSettings: MotionSettings;
-}
+import { motionValue, MotionValue } from "framer-motion";
+import { animateColor } from "../../../utils/colors";
+import type { GraphLink as LinkData, ThemeColors, MotionSettings } from "../../../utils/types";
+import type { GraphNode } from "./GraphNode";
+import { blendToTheme } from "../../../utils/colors";
 
 export class GraphLink {
   data: LinkData;
@@ -17,94 +12,100 @@ export class GraphLink {
   motionSettings: MotionSettings;
   isHovered = false;
 
-  constructor(props: GraphLinkProps) {
+  mStrokeColor: MotionValue<string>;
+  mGlowColor: MotionValue<string>;
+  mBorderColor: MotionValue<string>;
+  mOpacity: MotionValue<number>;
+
+  constructor(props: {
+    data: LinkData;
+    source: GraphNode;
+    target: GraphNode;
+    themeColors: ThemeColors;
+    motionSettings: MotionSettings;
+  }) {
     this.data = props.data;
     this.source = props.source;
     this.target = props.target;
     this.themeColors = props.themeColors;
     this.motionSettings = props.motionSettings;
+
+    // initialize motion values from theme
+    this.mStrokeColor = motionValue(this.resolveBaseColor());
+    this.mGlowColor = motionValue(props.themeColors.edge);
+    this.mBorderColor = motionValue(props.themeColors.edge);
+    this.mOpacity = motionValue(0.7);
   }
 
+  private resolveBaseColor(): string {
+    const { data, themeColors } = this;
+    switch (data.relation) {
+      case "imports": return themeColors.importEdge || themeColors.edge;
+      case "contains": return themeColors.containsEdge || themeColors.edge;
+      case "calls": return themeColors.callEdge || themeColors.edge;
+      default: return themeColors.edge;
+    }
+  }
+  
   setHover(state: boolean) {
     this.isHovered = state;
   }
   
   updateTheme(themeColors: ThemeColors) {
+    const prev = this.themeColors;
     this.themeColors = themeColors;
+
+    animateColor(this.mStrokeColor, this.resolveBaseColor(), this.resolveBaseColor(), 0.5);
+    animateColor(this.mGlowColor, prev.edge, themeColors.edge, 0.5);
+    animateColor(this.mBorderColor, prev.edge, themeColors.edge, 0.5);
   }
 
   draw(ctx: CanvasRenderingContext2D, time: number) {
-    const { source, target, data, themeColors, motionSettings } = this;
+    const { source, target, motionSettings } = this;
 
-    // Use smooth positions from motion values
     const sx = source.mx?.get() ?? source.x;
     const sy = source.my?.get() ?? source.y;
     const tx = target.mx?.get() ?? target.x;
     const ty = target.my?.get() ?? target.y;
 
-    const baseWidth = 1 + (source.data.metrics?.complexity || 1) * 0.1;
+    const baseWidth = 0.8 + (source.data.metrics?.complexity || 1) * 0.08;
+    const pulse =
+      1 + 0.2 * Math.sin(time * 0.004 * motionSettings.pulseSpeed + (source.data.emotion?.tension ?? 0.5) * Math.PI);
+    const opacity = this.mOpacity.get();
 
-    // --- pulse animation ---   
-    let pulseMultiplier = 1;
-    if (data.relation === 'calls') {
-      const tension = source.data.emotion?.tension || 0.5;
-      pulseMultiplier = 1 + 0.2 * Math.sin(time * 0.005 * motionSettings.pulseSpeed + tension * Math.PI);
-    }
+    const strokeColor = this.mStrokeColor.get();
+    const glowColor = this.mGlowColor.get();
+    const sourceColor = source.data.style?.color ?? this.themeColors.node;
+    const blended = blendToTheme(sourceColor, strokeColor, 0.6);
 
-    if (this.isHovered) pulseMultiplier *= 2;
+    const grad = ctx.createLinearGradient(sx, sy, tx, ty);
+    grad.addColorStop(0, blended + "80");
+    grad.addColorStop(0.5, blended + "FF");
+    grad.addColorStop(1, blended + "80");
 
-    let lineDash: number[] = [];
-    let strokeColor = themeColors.edge;
-    let opacity = 0.6;
-
-    switch (data.relation) {
-      case 'imports':
-        lineDash = [6, 4];
-        strokeColor = themeColors.importEdge || themeColors.edge;
-        opacity = 0.5 + 0.2 * Math.sin(time * 0.002);
-        break;
-      case 'contains':
-        lineDash = [];
-        strokeColor = themeColors.containsEdge || themeColors.edge;
-        opacity = 0.4 + 0.15 * Math.sin(time * 0.003);
-        break;
-      case 'calls':
-        lineDash = [];
-        strokeColor = themeColors.edge;
-        opacity = 0.7 + 0.2 * Math.sin(time * 0.005);
-        break;
-      default:
-        lineDash = [];
-        strokeColor = themeColors.edge;
-        opacity = 0.6;
-    }
-
-    // --- draw halo ---
+    // Glow
     ctx.save();
-    ctx.shadowColor = strokeColor;
-    ctx.shadowBlur = 4 * pulseMultiplier;
-    ctx.globalAlpha = opacity;
-    ctx.setLineDash(lineDash);
-    ctx.lineWidth = baseWidth * pulseMultiplier;
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = 8 * pulse;
+    ctx.globalAlpha = opacity * 0.6;
+    ctx.lineWidth = baseWidth * pulse * 2.0;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
     ctx.lineTo(tx, ty);
+    ctx.strokeStyle = grad;
     ctx.stroke();
     ctx.restore();
 
-    // --- main line ---
+    // Main line
     ctx.save();
-    ctx.strokeStyle = strokeColor;
-    ctx.globalAlpha = 1.0;
     ctx.lineWidth = baseWidth;
-    ctx.setLineDash(lineDash);
+    ctx.strokeStyle = grad;
+    ctx.globalAlpha = Math.min(1, opacity + 0.2);
     ctx.beginPath();
     ctx.moveTo(sx, sy);
     ctx.lineTo(tx, ty);
     ctx.stroke();
     ctx.restore();
-
-    ctx.setLineDash([]);
   }
 
   isPointInside(px: number, py: number): boolean {

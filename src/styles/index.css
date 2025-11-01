@@ -1,1 +1,21 @@
 @import 'tailwindcss';
+@import '../../tailwindcss.config.js';
+
+@theme {
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* --- Animation utility tokens --- */
+  --animate-gradient: gradient 15s ease infinite;
+}
+
+
+@layer base {
+  body {
+    @apply bg-fixed bg-[length:400%_400%] text-gray-900 dark:text-white animate-[var(--animate-gradient)];
+    @apply bg-[linear-gradient(-45deg,#ee7752,#e73c7e,#23a6d5,#23d5ab)] dark:bg-[linear-gradient(-45deg,#1e3a8a,#312e81,#0f172a,#1e293b)];
+  }
+}

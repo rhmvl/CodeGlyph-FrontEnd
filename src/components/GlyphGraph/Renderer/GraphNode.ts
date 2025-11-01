@@ -1,5 +1,6 @@
 import { MotionValue, motionValue, animate } from 'framer-motion';
 import type { GraphNode as NodeData, ThemeColors, MotionSettings } from '../../../utils/types';
+import { animateColor, blendToTheme } from '../../../utils/colors';
 
 export interface GraphNodeProps {
   data: NodeData;
@@ -23,6 +24,9 @@ export class GraphNode {
   my: MotionValue<number>;
   mRadius: MotionValue<number>;
   mGlow: MotionValue<number>;
+  mNodeColor: MotionValue<string>;
+  mAuraColor: MotionValue<string>;
+  mBorderColor: MotionValue<string>;
 
   themeColors: ThemeColors;
   motionSettings: MotionSettings;
@@ -55,6 +59,9 @@ export class GraphNode {
     this.my = motionValue(this.y);
     this.mRadius = motionValue(this.radius);
     this.mGlow = motionValue((this.data.metrics?.complexity || 1) * this.motionSettings.glowIntensity);
+    this.mNodeColor = motionValue(this.themeColors.node);
+    this.mAuraColor = motionValue(this.themeColors.aura);
+    this.mBorderColor = motionValue(this.themeColors.nodeBorder);
   }
 
   setHover(state: boolean) {
@@ -72,12 +79,25 @@ export class GraphNode {
   }
 
   updateTheme(themeColors: ThemeColors) {
+    const prev = this.themeColors;
     this.themeColors = themeColors;
+
+    // Animate color blending
+    animateColor(this.mNodeColor, prev.node, themeColors.node);
+    animateColor(this.mAuraColor, prev.aura, themeColors.aura);
+    animateColor(this.mBorderColor, prev.nodeBorder, themeColors.nodeBorder);
   }
 
   draw(ctx: CanvasRenderingContext2D, time: number) {
     const nodeColor = this.data.style?.color || this.themeColors.node;
     const auraColor = this.data.style?.highlightColor || this.themeColors.aura;
+    const borderColor = this.mBorderColor.get();
+    const complexity = this.data.metrics?.complexity ?? 0;
+    const strength = Math.min(0.2 + (complexity / 10) * 0.8, 1); // more complex nodes shift more
+
+    const bNodeColor = blendToTheme(nodeColor, this.mNodeColor.get(), strength);
+    const bAuraColor = blendToTheme(auraColor, this.mAuraColor.get(), strength);
+
     const pulse = 1 + 0.05 * Math.sin(time * 0.005 * this.motionSettings.pulseSpeed + this.pulseOffset);
     const radius = this.mRadius.get() * pulse;
     const glow = this.mGlow.get() * pulse;
@@ -85,8 +105,8 @@ export class GraphNode {
     ctx.save();
     ctx.beginPath();
     ctx.arc(this.mx.get(), this.my.get(), radius * 1.1, 0, Math.PI * 2);
-    ctx.fillStyle = nodeColor;
-    ctx.shadowColor = auraColor;
+    ctx.fillStyle = bNodeColor;
+    ctx.shadowColor = bAuraColor;
     ctx.shadowBlur = glow;
     ctx.globalAlpha = 0.9;
     ctx.fill();
@@ -94,7 +114,7 @@ export class GraphNode {
 
     // border
     ctx.save();
-    ctx.strokeStyle = this.themeColors.nodeBorder;
+    ctx.strokeStyle = borderColor;
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.arc(this.mx.get(), this.my.get(), radius * 1.1, 0, Math.PI * 2);

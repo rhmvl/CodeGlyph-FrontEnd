@@ -4,7 +4,7 @@ import { GraphRenderer } from './Renderer/GraphRenderer';
 import { Tooltip, type TooltipProps } from './Tooltip';
 import { Sidebar } from './Sidebar';
 import { useTheme } from '../../hooks/useTheme';
-import { generateThemeFromBase } from '../../utils/generateDynamicPallete';
+import { getGradientMood } from '../../utils/getGradientMood';
 // import { MiniMap } from './MiniMap';
 
 const defaultMotion = {
@@ -18,24 +18,10 @@ const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData;
   const [tooltip, setTooltip] = useState<TooltipProps>({ visible: false, x: 0, y: 0, title: '', subtitle: '', details: '' });
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
-  const colors = () => generateThemeFromBase(data.project.metrics, baseColors);
-  // TODO: This will be replaced later
-  const getGradientMood = (complexity: number) => {
-    if (complexity < 2) {
-      return "from-green-400 via-teal-500 to-blue-500"; // Calm, simple code
-    } else if (complexity < 5) {
-      return "from-yellow-400 via-orange-500 to-red-500"; // Moderate complexity
-    } else if (complexity < 8) {
-      return "from-purple-500 via-pink-500 to-red-600"; // Complex
-    } else {
-      return "from-red-700 via-black to-gray-900"; // Dangerously complex
-    }
-  };
-
   useEffect(() => {
     if (!canvasRef.current) return;
     if (!rendererRef.current) {
-      rendererRef.current = new GraphRenderer(canvasRef.current, data, width, height, colors(), defaultMotion);
+      rendererRef.current = new GraphRenderer(canvasRef.current, data, width, height, baseColors, defaultMotion);
     }
 
     const renderer = rendererRef.current;
@@ -111,12 +97,12 @@ const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData;
   }, []);
 
   useEffect(() => {
-    rendererRef.current?.updateTheme(colors());
+    rendererRef.current?.updateTheme(baseColors);
   }, [baseColors]);
 
   return (
     <div
-      className={`relative w-full h-full overflow-hidden bg-gradient-to-br ${getGradientMood(data.project.metrics.averageComplexity)} transition-all duration-700`}
+      className={`relative w-full h-full overflow-hidden bg-gradient-to-br transition-all duration-700 bg-mood-animate`}
     >
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       <Tooltip {...tooltip} />

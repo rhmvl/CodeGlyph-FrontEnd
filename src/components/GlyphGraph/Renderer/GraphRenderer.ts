@@ -159,11 +159,14 @@ export class GraphRenderer {
 
   draw(time: number) {
     const ctx = this.ctx;
-    const { drift, breath, px, py } = this.updateCamera(time); 
-    const effectiveScale = this.scale * breath;
-    const effectiveOffsetX = this.offsetX + drift.x + px;
-    const effectiveOffsetY = this.offsetY + drift.y + py;
-
+    // const { drift, breath, px, py } = this.updateCamera(time); 
+    // const effectiveScale = this.scale * breath;
+    // const effectiveOffsetX = this.offsetX + drift.x + px;
+    // const effectiveOffsetY = this.offsetY + drift.y + py;
+    const effectiveScale = this.scale;
+    const effectiveOffsetX = this.offsetX;
+    const effectiveOffsetY = this.offsetY;
+    
     this.cameraState = {
       offsetX: effectiveOffsetX,
       offsetY: effectiveOffsetY,
