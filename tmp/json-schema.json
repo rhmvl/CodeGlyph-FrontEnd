@@ -2,19 +2,19 @@
   "project": {
     "id": "codeglyph",
     "name": "CodeGlyph",
-    "language": ["python", "typescript"],
-    "version": "1.0.0",
+    "language": ["python", "typescript", "javascript"],
+    "version": "1.1.0",
     "createdAt": "2025-10-31T10:00:00Z",
-    "lastScanned": "2025-10-31T10:30:00Z",
+    "lastScanned": "2025-11-01T11:55:00Z",
     "sourcePath": "/path/to/project",
     "metrics": {
-      "totalFiles": 5,
-      "totalLOC": 1420,
-      "averageComplexity": 4.6,
-      "averageDepth": 3.2,
-      "dependencies": 12,
-      "functions": 18,
-      "classes": 5
+      "totalFiles": 8,
+      "totalLOC": 2220,
+      "averageComplexity": 4.3,
+      "averageDepth": 3.0,
+      "dependencies": 15,
+      "functions": 22,
+      "classes": 6
     },
     "config": {
       "visualDefaults": {
@@ -26,7 +26,7 @@
       "analysisSettings": {
         "complexityThreshold": 7,
         "ignorePatterns": ["*/tests/*", "*/venv/*"],
-        "includeDocstrings": false
+        "includeDocstrings": true
       }
     }
   },
@@ -84,13 +84,14 @@
         "complexity": 7,
         "calls": 1
       },
-      "calls": ["utils.ast_tools.walk_tree"]
+      "calls": ["walk_tree"]
     },
     {
       "id": "viz/graph_builder.py",
       "name": "graph_builder.py",
       "type": "module",
       "parent": "project",
+      "path": "viz/graph_builder.py",
       "metrics": {
         "loc": 420,
         "complexity": 5.5,
@@ -115,11 +116,128 @@
         "complexity": 8,
         "calls": 1
       },
-      "calls": ["viz.shaders.apply_colors"],
+      "calls": ["apply_colors"],
       "emotion": {
         "tension": 0.9,
         "harmony": 0.3
       }
+    },
+    
+    {
+      "id": "utils/ast_tools.py",
+      "name": "ast_tools.py",
+      "type": "module",
+      "parent": "project",
+      "path": "utils/ast_tools.py",
+      "metrics": {
+        "loc": 150,
+        "complexity": 3.0,
+        "imports": 1,
+        "classes": 0,
+        "functions": 2,
+        "lastModified": "2025-10-25T08:00:00Z"
+      },
+      "tags": ["utility", "ast"],
+      "status": "stable",
+      "style": { 
+        "color": "#1DD1A1",
+        "size": 0.8
+      }
+    },
+    {
+      "id": "walk_tree",
+      "name": "walk_tree",
+      "type": "function",
+      "parent": "utils/ast_tools.py",
+      "metrics": {
+        "loc": 45,
+        "complexity": 3,
+        "calls": 0
+      }
+    },
+    {
+      "id": "viz/shaders.py",
+      "name": "shaders.py",
+      "type": "module",
+      "parent": "project",
+      "path": "viz/shaders.py",
+      "metrics": {
+        "loc": 300,
+        "complexity": 4.5,
+        "imports": 3,
+        "classes": 0,
+        "functions": 3,
+        "lastModified": "2025-10-31T09:00:00Z",
+        "bugScore": 0.15
+      },
+      "tags": ["visualization", "style"],
+      "status": "refactor_needed",
+      "emotion": { 
+        "tension": 0.7, 
+        "stability": 0.5, 
+        "harmony": 0.4 
+      },
+      "style": {
+        "color": "#FFD166",
+        "size": 1.1
+      }
+    },
+    {
+      "id": "apply_colors",
+      "name": "apply_colors",
+      "type": "function",
+      "parent": "viz/shaders.py",
+      "metrics": {
+        "loc": 80,
+        "complexity": 6,
+        "calls": 0
+      }
+    },
+    
+    {
+      "id": "ui/renderer.ts",
+      "name": "renderer.ts",
+      "type": "module",
+      "language": "typescript",
+      "parent": "project",
+      "path": "ui/renderer.ts",
+      "metrics": {
+        "loc": 720,
+        "complexity": 4.0,
+        "imports": 5,
+        "classes": 2,
+        "functions": 0,
+        "lastModified": "2025-11-01T11:00:00Z"
+      },
+      "tags": ["frontend", "ui", "typescript"],
+      "status": "beta",
+      "style": { 
+        "color": "#4ECDC4", 
+        "size": 2.5
+      }
+    },
+    {
+      "id": "UIRenderer",
+      "name": "UIRenderer",
+      "type": "class",
+      "parent": "ui/renderer.ts",
+      "metrics": {
+        "loc": 250,
+        "complexity": 4.2,
+        "methods": 4
+      }
+    },
+    {
+      "id": "UIRenderer.render_node",
+      "name": "render_node",
+      "type": "method",
+      "parent": "UIRenderer",
+      "metrics": {
+        "loc": 40,
+        "complexity": 5,
+        "calls": 1
+      },
+      "calls": ["build_graph"]
     }
   ],
 
@@ -130,19 +248,35 @@
     { "source": "Parser", "target": "Parser.analyze_file", "relation": "contains" },
     { "source": "viz/graph_builder.py", "target": "build_graph", "relation": "contains" },
 
+    { "source": "project", "target": "utils/ast_tools.py", "relation": "contains" },
+    { "source": "project", "target": "viz/shaders.py", "relation": "contains" },
+    { "source": "project", "target": "ui/renderer.ts", "relation": "contains" },
+    { "source": "ui/renderer.ts", "target": "UIRenderer", "relation": "contains" },
+    { "source": "UIRenderer", "target": "UIRenderer.render_node", "relation": "contains" },
+    { "source": "utils/ast_tools.py", "target": "walk_tree", "relation": "contains" },
+    { "source": "viz/shaders.py", "target": "apply_colors", "relation": "contains" },
+
+
     { "source": "core/parser.py", "target": "utils/ast_tools.py", "relation": "imports" },
     { "source": "viz/graph_builder.py", "target": "viz/shaders.py", "relation": "imports" },
+    
     { "source": "Parser.analyze_file", "target": "walk_tree", "relation": "calls" },
-    { "source": "build_graph", "target": "apply_colors", "relation": "calls" }
+    { "source": "build_graph", "target": "apply_colors", "relation": "calls" },
+
+    { "source": "ui/renderer.ts", "target": "viz/graph_builder.py", "relation": "imports" },
+    { "source": "UIRenderer.render_node", "target": "build_graph", "relation": "calls" },
+
+    { "source": "utils/ast_tools.py", "target": "logging", "relation": "imports" }
+
   ],
 
   "metadata": {
-    "generator": "CodeGlyph Analyzer v0.1",
-    "schemaVersion": "1.0",
-    "exportedAt": "2025-10-31T10:31:00Z",
+    "generator": "CodeGlyph Analyzer v1.0",
+    "schemaVersion": "1.1",
+    "exportedAt": "2025-11-01T11:57:00Z",
     "engine": {
-      "languageSupport": ["python", "javascript", "typescript"],
-      "analysisTimeMs": 523
+      "languageSupport": ["python", "javascript", "typescript", "java"],
+      "analysisTimeMs": 950
     }
   }
 }
