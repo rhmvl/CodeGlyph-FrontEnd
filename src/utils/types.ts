@@ -1,3 +1,5 @@
+export type LinkRelation = 'contains' | 'imports' | 'calls';
+
 export interface ProjectMetrics {
   totalFiles: number;
   totalLOC: number;
@@ -78,7 +80,7 @@ export interface GraphNode {
 export interface GraphLink {
   source: string;
   target: string;
-  relation: string;
+  relation: LinkRelation;
 }
 
 export interface GraphData {
@@ -103,3 +105,29 @@ export interface CodeGlyphData {
   metadata: Metadata;
 }
 
+export interface ThemeColors {
+  node: string;
+  nodeBorder: string;
+  aura: string;
+  edge: string;
+  importEdge?: string;
+  callEdge?: string;
+  glowSoft?: string;
+  glowStrong?: string;
+  textPrimary?: string;
+  textSecondary?: string;
+  containsEdge?: string;
+  background: string;
+}
+
+export interface MotionSettings {
+  glowIntensity: number;
+  pulseSpeed: number;
+  sizeScale: number;
+}
+
+export interface Theme {
+  name: string;
+  colors: ThemeColors;
+  motion: MotionSettings;
+}

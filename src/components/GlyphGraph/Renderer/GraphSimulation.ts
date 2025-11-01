@@ -16,11 +16,11 @@ export class GraphSimulation {
   }
 
   step() {
-    // link force
+    // --- Link force ---
     this.links.forEach(l => {
       const dx = l.target.x - l.source.x;
       const dy = l.target.y - l.source.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+      const distance = Math.sqrt(dx * dx + dy * dy) || 0.01; // prevent division by zero
       const desired = 150;
       const force = (distance - desired) * 0.01;
       const fx = (dx / distance) * force;
@@ -32,13 +32,14 @@ export class GraphSimulation {
       l.target.vy -= fy;
     });
 
-    // repulsion / collision
+    // --- Repulsion / collision ---
     this.nodes.forEach((n1, i) => {
       this.nodes.slice(i + 1).forEach(n2 => {
         const dx = n2.x - n1.x;
         const dy = n2.y - n1.y;
         const distSq = dx * dx + dy * dy;
         if (distSq === 0) return;
+
         const minDist = n1.radius + n2.radius + 20;
         if (distSq < minDist * minDist) {
           const dist = Math.sqrt(distSq);
@@ -54,12 +55,15 @@ export class GraphSimulation {
       });
     });
 
-    // update positions
     this.nodes.forEach(n => {
       n.vx *= 0.9;
       n.vy *= 0.9;
+
       n.x += n.vx;
       n.y += n.vy;
+
+      if (n.fixed) return;
+      n.updateMotion(n.x, n.y);
     });
   }
 }

@@ -1,4 +1,4 @@
-import type { CodeGlyphData } from '../../../utils/types';
+import type { CodeGlyphData, MotionSettings, ThemeColors } from '../../../utils/types';
 import { initCanvas } from './GraphCanvas';
 import { GraphNode } from './GraphNode';
 import { GraphLink } from './GraphLink';
@@ -26,7 +26,8 @@ export class GraphRenderer {
   dragOffsetX = 0;
   dragOffsetY = 0;
 
-  constructor(canvasElement: HTMLCanvasElement, data: CodeGlyphData, width: number, height: number) {
+  constructor(canvasElement: HTMLCanvasElement, data: CodeGlyphData, width: number, 
+              height: number, themeColors: ThemeColors, motionSettings: MotionSettings) {
     const { canvas, ctx } = initCanvas(canvasElement, width, height);
     this.canvas = canvas;
     this.ctx = ctx;
@@ -35,47 +36,67 @@ export class GraphRenderer {
 
     // --- create nodes ---
     const rootNode = new GraphNode({
-      id: 'project',
-      name: data.project.name,
-      type: 'root',
-      style: { color: '#888', size: 2 },
-      metrics: data.project.metrics
-    }, width / 2, height / 2);
+      data: {
+        id: "project",
+        name: data.project.name,
+        type: 'project',
+        metrics: { ...data.project.metrics, loc: data.project.metrics.totalLOC },
+        style: { color: '#888', size: 2 },
+      },
+      x: width / 2,
+      y: height / 2,
+      themeColors,
+      motionSettings
+    });
 
-    this.nodes = [rootNode, ...data.nodes.map(n => new GraphNode(n, Math.random()*width, Math.random()*height))];
+    this.nodes = [
+      rootNode,
+      ...data.nodes.map(n => new GraphNode({
+        data: n,
+        x: Math.random() * width,
+        y: Math.random() * height,
+        themeColors,
+        motionSettings
+      }))
+    ];
 
     const nodesMap = new Map(this.nodes.map(n => [n.data.id, n]));
     this.links = data.links
-      .map(l => {
-        const source = nodesMap.get(l.source);
-        const target = nodesMap.get(l.target);
-        if (!source || !target) return null;
-        return new GraphLink(l, nodesMap);
-      })
-      .filter(Boolean) as GraphLink[];
+    .map(l => {
+      const source = nodesMap.get(l.source);
+      const target = nodesMap.get(l.target);
+      if (!source || !target) return null;
+      return new GraphLink({
+        data: l,
+        source: source,
+        target: target,
+        themeColors,
+        motionSettings
+      });
+    })
+    .filter(Boolean) as GraphLink[];
 
     this.simulation = new GraphSimulation(this.nodes, this.links, width, height);
 
     // --- events ---
     this.addEventListeners();
-
-    this.animate();
+    this.animate(1);
   }
 
-  animate() {
+  animate(time: number) {
     this.simulation.step();
-    this.draw();
-    this.animationFrame = requestAnimationFrame(() => this.animate());
+    this.draw(time);
+    this.animationFrame = requestAnimationFrame((t) => this.animate(t));
   }
 
-  draw() {
+  draw(time: number) {
     const ctx = this.ctx;
     ctx.save();
     ctx.setTransform(this.scale, 0, 0, this.scale, this.offsetX, this.offsetY);
     ctx.clearRect(-this.offsetX / this.scale, -this.offsetY / this.scale, this.width / this.scale, this.height / this.scale);
 
-    this.links.forEach(l => l.draw(ctx));
-    this.nodes.forEach(n => n.draw(ctx));
+    this.links.forEach(l => l.draw(ctx, time));
+    this.nodes.forEach(n => n.draw(ctx, time));
     ctx.restore();
   }
 
@@ -95,6 +116,7 @@ export class GraphRenderer {
       const node = this.getNodeAt(e.offsetX, e.offsetY);
       if (node) {
         this.draggingNode = node;
+        node.fixed = true;
         const graphX = (e.offsetX - this.offsetX) / this.scale;
         const graphY = (e.offsetY - this.offsetY) / this.scale;
         this.dragOffsetX = graphX - node.x;
@@ -110,8 +132,14 @@ export class GraphRenderer {
       if (this.draggingNode) {
         const graphX = (e.offsetX - this.offsetX) / this.scale;
         const graphY = (e.offsetY - this.offsetY) / this.scale;
+
+        // Update simulation positions
         this.draggingNode.x = graphX - this.dragOffsetX;
         this.draggingNode.y = graphY - this.dragOffsetY;
+
+        // Immediately set motion values to match
+        this.draggingNode.mx.set(this.draggingNode.x);
+        this.draggingNode.my.set(this.draggingNode.y);
       } else if (isPanning) {
         this.offsetX += e.offsetX - lastX;
         this.offsetY += e.offsetY - lastY;
@@ -121,6 +149,8 @@ export class GraphRenderer {
     };
 
     const onMouseUp = () => {
+      if (this.draggingNode)
+        this.draggingNode.fixed = false;
       this.draggingNode = null;
       isPanning = false;
     };
