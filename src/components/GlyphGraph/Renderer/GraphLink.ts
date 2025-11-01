@@ -29,9 +29,8 @@ export class GraphLink {
     this.isHovered = state;
   }
   
-  updateTheme(themeColors: ThemeColors, motionSettings: MotionSettings) {
+  updateTheme(themeColors: ThemeColors) {
     this.themeColors = themeColors;
-    this.motionSettings = motionSettings;
   }
 
   draw(ctx: CanvasRenderingContext2D, time: number) {

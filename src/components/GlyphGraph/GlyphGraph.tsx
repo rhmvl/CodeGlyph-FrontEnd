@@ -13,10 +13,12 @@ const defaultMotion = {
 
 const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData; width?: number; height?: number }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rendererRef = useRef<GraphRenderer | null>(null);
   const { colors: baseColors, theme, toggleTheme } = useTheme();
   const [tooltip, setTooltip] = useState<TooltipProps>({ visible: false, x: 0, y: 0, title: '', subtitle: '', details: '' });
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
+  const colors = () => generateThemeFromBase(data.project.metrics, baseColors);
   // TODO: This will be replaced later
   const getGradientMood = (complexity: number) => {
     if (complexity < 2) {
@@ -32,9 +34,11 @@ const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData;
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    const colors = generateThemeFromBase(data.project.metrics, baseColors)
-    const renderer = new GraphRenderer(canvasRef.current, data, width, height, colors, defaultMotion);
+    if (!rendererRef.current) {
+      rendererRef.current = new GraphRenderer(canvasRef.current, data, width, height, colors(), defaultMotion);
+    }
 
+    const renderer = rendererRef.current;
     let dragStartX = 0;
     let dragStartY = 0;
     const DRAG_THRESHOLD = 5; // pixels
@@ -47,8 +51,9 @@ const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData;
         const rect = canvasRef.current!.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-        const graphX = (mouseX - renderer.offsetX) / renderer.scale;
-        const graphY = (mouseY - renderer.offsetY) / renderer.scale;
+        const camera = renderer.cameraState;
+        const graphX = (mouseX - camera.offsetX) / camera.scale;
+        const graphY = (mouseY - camera.offsetY) / camera.scale;
 
         // update nodes and links hover states
         renderer.nodes.forEach(n => n.setHover(n.isPointInside(graphX, graphY)));
@@ -98,11 +103,16 @@ const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData;
 
     return () => {
       renderer.destroy();
+      rendererRef.current = null;
       canvasRef.current?.removeEventListener('pointerdown', handleMouseDown);
       window.removeEventListener('pointermove', handleMouseMove);
       window.removeEventListener('pointerup', handleMouseUp);
     };
-  }, [data, width, height]);
+  }, []);
+
+  useEffect(() => {
+    rendererRef.current?.updateTheme(colors());
+  }, [baseColors]);
 
   return (
     <div

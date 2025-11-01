@@ -13,7 +13,8 @@ export class GraphRenderer {
   width: number;
   height: number;
   animationFrame: number | null = null;
-
+  cameraState = { offsetX: 0, offsetY: 0, scale: 1 };
+  
   // Transformation
   offsetX = 0;
   offsetY = 0;
@@ -99,9 +100,29 @@ export class GraphRenderer {
     this.animate(1);
   }
 
+  updateTheme(themeColors: ThemeColors) {
+    this.nodes.forEach(n => n.updateTheme(themeColors));
+    this.links.forEach(l => l.updateTheme(themeColors));
+  }
+
+  // updateMotion(motionSettings: MotionSettings) {
+  //   this.nodes.forEach(n => n.updateMotion(motionSettings));
+  //   this.links.forEach(l => l.updateMotion(motionSettings));
+  //   // this.motionSettings = motionSettings;
+  // }
+
+  updateData(newData: CodeGlyphData) {
+    // optionally update node metrics / values without recreating layout
+    newData.nodes.forEach(updatedNode => {
+      const node = this.nodes.find(n => n.data.id === updatedNode.id);
+      if (node) Object.assign(node.data, updatedNode);
+    });
+  }
+
   /** Smooth camera drift + breathing + parallax logic */
   updateCamera(time: number) {
     const now = performance.now();
+    // TODO: Fix this idle check
     this.idle = now - this.lastInteraction > this.IDLE_TIMEOUT;
 
     // Occasionally pick new drift targets
@@ -131,7 +152,6 @@ export class GraphRenderer {
   }
 
   animate(time: number) {
-    // this.updateCamera(time);
     this.simulation.step();
     this.draw(time);
     this.animationFrame = requestAnimationFrame((t) => this.animate(t));
@@ -139,14 +159,18 @@ export class GraphRenderer {
 
   draw(time: number) {
     const ctx = this.ctx;
-    const { drift, breath, px, py } = this.updateCamera(time);
-
-    ctx.save();
-
-    // Apply breathing to scale, and parallax/drift as offsets.
+    const { drift, breath, px, py } = this.updateCamera(time); 
     const effectiveScale = this.scale * breath;
     const effectiveOffsetX = this.offsetX + drift.x + px;
     const effectiveOffsetY = this.offsetY + drift.y + py;
+
+    this.cameraState = {
+      offsetX: effectiveOffsetX,
+      offsetY: effectiveOffsetY,
+      scale: effectiveScale,
+    };
+
+    ctx.save();
 
     ctx.setTransform(effectiveScale, 0, 0, effectiveScale, effectiveOffsetX, effectiveOffsetY);
     ctx.clearRect(
