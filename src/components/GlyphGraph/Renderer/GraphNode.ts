@@ -73,7 +73,6 @@ export class GraphNode {
 
   draw(ctx: CanvasRenderingContext2D, time: number) {
     const nodeColor = this.data.style?.color || this.themeColors.node;
-    const auraColor = this.data.style?.highlightColor || this.themeColors.aura;
     const pulse = 1 + 0.05 * Math.sin(time * 0.005 * this.motionSettings.pulseSpeed + this.pulseOffset);
     const radius = this.mRadius.get() * pulse;
     const glow = this.mGlow.get() * pulse;
@@ -82,7 +81,7 @@ export class GraphNode {
     ctx.beginPath();
     ctx.arc(this.mx.get(), this.my.get(), radius * 1.1, 0, Math.PI * 2);
     ctx.fillStyle = nodeColor;
-    ctx.shadowColor = auraColor;
+    ctx.shadowColor = nodeColor;
     ctx.shadowBlur = glow;
     ctx.globalAlpha = 0.9;
     ctx.fill();

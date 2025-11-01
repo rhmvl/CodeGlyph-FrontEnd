@@ -17,6 +17,19 @@ const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData;
   const [tooltip, setTooltip] = useState<TooltipProps>({ visible: false, x: 0, y: 0, title: '', subtitle: '', details: '' });
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
+  // TODO: This will be replaced later
+  const getGradientMood = (complexity: number) => {
+    if (complexity < 2) {
+      return "from-green-400 via-teal-500 to-blue-500"; // Calm, simple code
+    } else if (complexity < 5) {
+      return "from-yellow-400 via-orange-500 to-red-500"; // Moderate complexity
+    } else if (complexity < 8) {
+      return "from-purple-500 via-pink-500 to-red-600"; // Complex
+    } else {
+      return "from-red-700 via-black to-gray-900"; // Dangerously complex
+    }
+  };
+
   useEffect(() => {
     if (!canvasRef.current) return;
     const colors = generateThemeFromBase(data.project.metrics, baseColors)
@@ -89,20 +102,26 @@ const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData;
       window.removeEventListener('pointermove', handleMouseMove);
       window.removeEventListener('pointerup', handleMouseUp);
     };
-  }, [data, width, height, baseColors]);
+  }, [data, width, height]);
 
   return (
-    <div className="relative w-full h-full bg-gray-900 overflow-hidden">
-      <canvas ref={canvasRef} width={width} height={height}/>
+    <div
+      className={`relative w-full h-full overflow-hidden bg-gradient-to-br ${getGradientMood(data.project.metrics.averageComplexity)} transition-all duration-700`}
+    >
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       <Tooltip {...tooltip} />
       <Sidebar node={selectedNode} onClose={() => setSelectedNode(null)} />
-      { /* <MiniMap /> */ }
+
       <button
         onClick={toggleTheme}
-        className="absolute top-2 right-2 text-sm px-3 py-1 rounded bg-gray-700 text-white"
+        className="absolute top-2 right-2 text-sm px-3 py-1 rounded bg-gray-800/60 text-white backdrop-blur-md hover:bg-gray-700 transition"
       >
-        {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+        {theme === "dark" ? "Light Mode" : "Dark Mode"}
       </button>
+
+      <div className="absolute bottom-2 left-2 text-xs text-white/80">
+        Mood: {data.project.metrics.averageComplexity.toFixed(2)} complexity
+      </div>
     </div>
   );
 };

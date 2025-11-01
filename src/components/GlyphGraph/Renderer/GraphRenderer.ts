@@ -26,6 +26,22 @@ export class GraphRenderer {
   dragOffsetX = 0;
   dragOffsetY = 0;
 
+  // --- Camera drift / breathing / parallax ---
+  drift = { x: 0, y: 0, rot: 0 };
+  driftTarget = { x: 0, y: 0, rot: 0 };
+  lastDriftChange = 0;
+  lastInteraction = performance.now();
+  mouse = { x: 0, y: 0 };
+  idle = true;
+
+  // effect tuning
+  readonly DRIFT_INTENSITY = 30;
+  readonly DRIFT_ROT_INTENSITY = 0.004;
+  readonly DRIFT_INTERVAL = 4000;
+  readonly BREATH_SCALE = 0.015;
+  readonly PARALLAX_INTENSITY = 0.05;
+  readonly IDLE_TIMEOUT = 1500;
+
   constructor(canvasElement: HTMLCanvasElement, data: CodeGlyphData, width: number, 
               height: number, themeColors: ThemeColors, motionSettings: MotionSettings) {
     const { canvas, ctx } = initCanvas(canvasElement, width, height);
@@ -83,7 +99,39 @@ export class GraphRenderer {
     this.animate(1);
   }
 
+  /** Smooth camera drift + breathing + parallax logic */
+  updateCamera(time: number) {
+    const now = performance.now();
+    this.idle = now - this.lastInteraction > this.IDLE_TIMEOUT;
+
+    // Occasionally pick new drift targets
+    if (now - this.lastDriftChange > this.DRIFT_INTERVAL) {
+      this.lastDriftChange = now;
+      this.driftTarget.x = (Math.random() * 2 - 1) * this.DRIFT_INTENSITY;
+      this.driftTarget.y = (Math.random() * 2 - 1) * this.DRIFT_INTENSITY * 0.6;
+      this.driftTarget.rot = (Math.random() * 2 - 1) * this.DRIFT_ROT_INTENSITY;
+    }
+
+    // Smooth drift
+    this.drift.x += (this.driftTarget.x - this.drift.x) * 0.02;
+    this.drift.y += (this.driftTarget.y - this.drift.y) * 0.02;
+    this.drift.rot += (this.driftTarget.rot - this.drift.rot) * 0.02;
+
+    // Breathing
+    const breath = 1 + Math.sin(time / 3000) * this.BREATH_SCALE;
+
+    // Parallax (based on mouse)
+    const nx = (this.mouse.x / this.width) * 2 - 1;
+    const ny = (this.mouse.y / this.height) * 2 - 1;
+    const pFactor = this.idle ? 0.25 : 1;
+    const px = -nx * this.width * this.PARALLAX_INTENSITY * pFactor;
+    const py = -ny * this.height * this.PARALLAX_INTENSITY * pFactor;
+
+    return { drift: { ...this.drift }, breath, px, py };
+  }
+
   animate(time: number) {
+    // this.updateCamera(time);
     this.simulation.step();
     this.draw(time);
     this.animationFrame = requestAnimationFrame((t) => this.animate(t));
@@ -91,12 +139,26 @@ export class GraphRenderer {
 
   draw(time: number) {
     const ctx = this.ctx;
+    const { drift, breath, px, py } = this.updateCamera(time);
+
     ctx.save();
-    ctx.setTransform(this.scale, 0, 0, this.scale, this.offsetX, this.offsetY);
-    ctx.clearRect(-this.offsetX / this.scale, -this.offsetY / this.scale, this.width / this.scale, this.height / this.scale);
+
+    // Apply breathing to scale, and parallax/drift as offsets.
+    const effectiveScale = this.scale * breath;
+    const effectiveOffsetX = this.offsetX + drift.x + px;
+    const effectiveOffsetY = this.offsetY + drift.y + py;
+
+    ctx.setTransform(effectiveScale, 0, 0, effectiveScale, effectiveOffsetX, effectiveOffsetY);
+    ctx.clearRect(
+      -effectiveOffsetX / effectiveScale,
+      -effectiveOffsetY / effectiveScale,
+      this.width / effectiveScale,
+      this.height / effectiveScale
+    );
 
     this.links.forEach(l => l.draw(ctx, time));
     this.nodes.forEach(n => n.draw(ctx, time));
+
     ctx.restore();
   }
 

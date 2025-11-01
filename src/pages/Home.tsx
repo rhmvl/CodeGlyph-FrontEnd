@@ -6,7 +6,7 @@ const Home = () => {
 
   return (
     <div className="w-screen h-screen">
-      <GlyphGraph data={data} />
+      <GlyphGraph data={data} width={window.innerWidth} height={window.innerHeight}/>
     </div>
   );
 };

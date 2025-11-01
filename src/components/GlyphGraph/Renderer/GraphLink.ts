@@ -52,7 +52,7 @@ export class GraphLink {
       pulseMultiplier = 1 + 0.2 * Math.sin(time * 0.005 * motionSettings.pulseSpeed + tension * Math.PI);
     }
 
-    if (this.isHovered) pulseMultiplier *= 1.3;
+    if (this.isHovered) pulseMultiplier *= 2;
 
     let lineDash: number[] = [];
     let strokeColor = themeColors.edge;
