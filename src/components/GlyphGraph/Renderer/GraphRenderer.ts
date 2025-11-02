@@ -3,6 +3,7 @@ import { initCanvas } from './GraphCanvas';
 import { GraphNode } from './GraphNode';
 import { GraphLink } from './GraphLink';
 import { GraphSimulation } from './GraphSimulation';
+import { getMetricColor } from '../../../utils/metrics';
 
 export class GraphRenderer {
   canvas: HTMLCanvasElement;
@@ -50,7 +51,16 @@ export class GraphRenderer {
     this.ctx = ctx;
     this.width = width;
     this.height = height;
-
+    const ranges = {
+      totalFiles: { min: 1, max: 100 },
+      totalLOC: { min: 0, max: 10000 },
+      averageComplexity: { min: 0, max: 15 },
+      averageDepth: { min: 0, max: 10 },
+      dependencies: { min: 0, max: 50 },
+      functions: { min: 0, max: 500 },
+      classes: { min: 0, max: 100 },
+    };
+    
     // --- create nodes ---
     const rootNode = new GraphNode({
       data: {
@@ -58,7 +68,12 @@ export class GraphRenderer {
         name: data.project.name,
         type: 'project',
         metrics: { ...data.project.metrics, loc: data.project.metrics.totalLOC },
-        style: { color: '#888', size: 2 },
+        style: { color: getMetricColor(
+          data.project.metrics.averageComplexity,
+          ranges.averageComplexity.min,
+          ranges.averageComplexity.max
+        ), size: 2 
+        },
       },
       x: width / 2,
       y: height / 2,
