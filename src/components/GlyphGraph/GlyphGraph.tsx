@@ -4,7 +4,7 @@ import { GraphRenderer } from './Renderer/GraphRenderer';
 import { Tooltip, type TooltipProps } from './Tooltip';
 import { Sidebar } from './Sidebar';
 import { useTheme } from '../../hooks/useTheme';
-import { getGradientMood } from '../../utils/getGradientMood';
+// import { getGradientMood } from '../../utils/getGradientMood';
 // import { MiniMap } from './MiniMap';
 
 const defaultMotion = {
@@ -15,7 +15,7 @@ const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rendererRef = useRef<GraphRenderer | null>(null);
   const { colors: baseColors, theme, toggleTheme } = useTheme();
-  const [tooltip, setTooltip] = useState<TooltipProps>({ visible: false, x: 0, y: 0, title: '', subtitle: '', details: '' });
+  const [tooltip, setTooltip] = useState<TooltipProps>({ visible: false, x: 0, y: 0, title: '', subtitle: '' });
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData;
             y: screenY + rect.top,
             title: node.data.name,
             subtitle: node.data.type,
-            details: JSON.stringify(node.data.metrics || {}, null, 2),
+            details: node.data.metrics,
           });
         } else {
           setTooltip(t => ({ ...t, visible: false }));
@@ -101,24 +101,11 @@ const GlyphGraph = ({ data, width = 1200, height = 800 }: { data: CodeGlyphData;
   }, [baseColors]);
 
   return (
-    <div
-      className={`relative w-full h-full overflow-hidden bg-gradient-to-br transition-all duration-700 bg-mood-animate`}
-    >
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-      <Tooltip {...tooltip} />
-      <Sidebar node={selectedNode} onClose={() => setSelectedNode(null)} />
-
-      <button
-        onClick={toggleTheme}
-        className="absolute top-2 right-2 text-sm px-3 py-1 rounded bg-gray-800/60 text-white backdrop-blur-md hover:bg-gray-700 transition"
-      >
-        {theme === "dark" ? "Light Mode" : "Dark Mode"}
-      </button>
-
-      <div className="absolute bottom-2 left-2 text-xs text-white/80">
-        Mood: {data.project.metrics.averageComplexity.toFixed(2)} complexity
-      </div>
-    </div>
+    <>
+        <canvas ref={canvasRef} />
+        <Tooltip {...tooltip} />
+        <Sidebar node={selectedNode} onClose={() => setSelectedNode(null)} />
+      </>
   );
 };
 
