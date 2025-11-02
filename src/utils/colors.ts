@@ -154,9 +154,11 @@ function interpHue(h1: number, h2: number, t: number): number {
  * Blend a source color toward a target theme color in HSL space.
  * strength: 0..1 (0 = keep source, 1 = become target)
  */
-export function blendToTheme(srcHex: string, themeHex: string, strength = 0.7): string {
-  const [r1,g1,b1] = hexToRgb(srcHex);
-  const [r2,g2,b2] = hexToRgb(themeHex);
+export function blendColor(color1: string | undefined, color2: string, strength = 0.7): string {
+  if (!color1) return color2;
+
+  const [r1,g1,b1] = hexToRgb(color1);
+  const [r2,g2,b2] = hexToRgb(color2);
   const [h1,s1,l1] = rgbToHsl(r1,g1,b1);
   const [h2,s2,l2] = rgbToHsl(r2,g2,b2);
 
