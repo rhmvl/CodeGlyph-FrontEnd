@@ -1,4 +1,4 @@
-export type LinkRelation = 'contains' | 'imports' | 'calls';
+export type LinkRelation = 'contains' | 'imports' | 'calls' | 'inherits';
 
 export interface ProjectMetrics {
   totalFiles: number;
@@ -61,6 +61,7 @@ export interface NodeMetrics {
   methods?: number;
   calls?: number;
   lastModified?: string;
+  bugScore?: number;
 }
 
 export interface GraphNode {
