@@ -1,42 +1,50 @@
-import { create } from 'zustand';
-import type { ThemeColors } from '../utils/types';
-import { Themes, type ThemeName } from '../utils/themes';
+import { create } from "zustand";
+import type { ThemeColors } from "../utils/types";
+import { Themes, type ThemeName } from "../utils/themes";
 
 interface ThemeState {
   theme: ThemeName;
   colors: ThemeColors;
+  initialized: boolean;
   setTheme: (theme: ThemeName) => void;
   toggleTheme: () => void;
+  initTheme: () => void;
 }
 
-export const useTheme = create<ThemeState>((set, get) => {
-  const storedTheme = (localStorage.getItem('theme') as ThemeName) || 'dark';
+export const useTheme = create<ThemeState>((set, get) => ({
+  theme: "dark",
+  colors: Themes.dark,
+  initialized: false,
 
-  if (storedTheme === 'dark') 
-    document.documentElement.classList.add('dark');
-  else
-    document.documentElement.classList.remove('dark');
+  initTheme: () => {
+    if (typeof window === "undefined") return;
 
-  return {
-    theme: storedTheme,
-    colors: Themes[storedTheme],
+    const storedTheme = (localStorage.getItem("theme") as ThemeName) || "dark";
 
-    setTheme: (theme) => {
-      localStorage.setItem('theme', theme);
+    document.documentElement.classList.toggle("dark", storedTheme === "dark");
+    document.documentElement.setAttribute("data-theme", storedTheme);
 
-      // Update Tailwind dark class
-      if (theme === 'dark')
-        document.documentElement.classList.add('dark');
-      else
-        document.documentElement.classList.remove('dark');
+    set({
+      theme: storedTheme,
+      colors: Themes[storedTheme],
+      initialized: true,
+    });
+  },
 
-      document.documentElement.setAttribute('data-theme', theme);
-      set({ theme, colors: Themes[theme] });
-    },
+  /** Manually set a theme */
+  setTheme: (theme) => {
+    if (typeof window === "undefined") return;
 
-    toggleTheme: () => {
-      const next = get().theme === 'dark' ? 'light' : 'dark';
-      get().setTheme(next);
-    },
-  };
-});
+    localStorage.setItem("theme", theme);
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.setAttribute("data-theme", theme);
+
+    set({ theme, colors: Themes[theme] });
+  },
+
+  /** Toggle between light/dark */
+  toggleTheme: () => {
+    const next = get().theme === "dark" ? "light" : "dark";
+    get().setTheme(next);
+  },
+}));
